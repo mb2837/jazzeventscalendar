@@ -203,30 +203,6 @@ export default function PublicDashboard() {
 
             <aside className="layout__aside">
               <div className="aside-head">
-                <nav className="aside-crumb" aria-label="Day filter">
-                  <button
-                    type="button"
-                    className={`aside-crumb__item${selectedVenueId ? '' : ' is-current'}`}
-                    onClick={() => {
-                      setSelectedVenueId(null);
-                      setSelectedEventId(null);
-                      if (view === 'map') setMapFocusToken((t) => t + 1);
-                    }}
-                    disabled={!selectedVenueId}
-                  >
-                    {format(selectedDate, 'EEE, MMM d')}
-                  </button>
-                  {selectedVenueId && venueById[selectedVenueId] && (
-                    <>
-                      <span className="aside-crumb__sep" aria-hidden="true">
-                        /
-                      </span>
-                      <span className="aside-crumb__item is-current">
-                        {venueById[selectedVenueId].name}
-                      </span>
-                    </>
-                  )}
-                </nav>
                 <div className="aside-head__title-row">
                   <button
                     type="button"
@@ -248,8 +224,8 @@ export default function PublicDashboard() {
                 </div>
                 <p>
                   {listEvents.length} show{listEvents.length === 1 ? '' : 's'}
-                  {selectedVenueId
-                    ? ` at this venue · ${dayEvents.length} on this day`
+                  {selectedVenueId && venueById[selectedVenueId]
+                    ? ` · ${venueById[selectedVenueId].name}`
                     : ''}
                 </p>
                 {selectedVenueId && (
