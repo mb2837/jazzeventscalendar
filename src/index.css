@@ -11,6 +11,9 @@
   --teal-glow: rgba(47, 111, 106, 0.35);
   --line: rgba(232, 226, 214, 0.12);
   --danger-soft: #c45c4a;
+  --panel: rgba(18, 24, 32, 0.72);
+  --panel-solid: rgba(18, 24, 32, 0.94);
+  --panel-deep: rgba(10, 14, 18, 0.55);
   --radius: 4px;
   --font-display: 'Syne', sans-serif;
   --font-body: 'Figtree', sans-serif;

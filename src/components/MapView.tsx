@@ -109,8 +109,15 @@ export function MapView({
     return counts;
   }, [scopedEvents]);
 
-  const activeVenueIds = useMemo(() => [...venueCounts.keys()], [venueCounts]);
-  const markers = catalog.venues.filter((v) => venueCounts.has(v.id));
+  const activeVenueIds = useMemo(() => {
+    const ids = new Set(venueCounts.keys());
+    if (selectedVenueId) ids.add(selectedVenueId);
+    return [...ids];
+  }, [venueCounts, selectedVenueId]);
+
+  const markers = catalog.venues.filter(
+    (v) => venueCounts.has(v.id) || v.id === selectedVenueId,
+  );
 
   useEffect(() => {
     if (!selectedVenueId) return;
@@ -120,49 +127,8 @@ export function MapView({
     return () => window.clearTimeout(t);
   }, [selectedVenueId, focusToken]);
 
-  const spreadHint =
-    focusDate &&
-    markers.length >= 2 &&
-    !selectedVenueId &&
-    (() => {
-      const lats = markers.map((m) => m.lat);
-      const lngs = markers.map((m) => m.lng);
-      const latSpan = Math.max(...lats) - Math.min(...lats);
-      const lngSpan = Math.max(...lngs) - Math.min(...lngs);
-      return latSpan > 0.25 || lngSpan > 0.35;
-    })();
-
   return (
     <section className="map-panel" aria-label="Venue map">
-      <div className="map-panel__meta">
-        <p>
-          {focusDate ? (
-            <>
-              <strong>
-                {markers.length} venue{markers.length === 1 ? '' : 's'}
-              </strong>
-              {` · ${format(focusDate, 'EEE, MMM d')} · ${scopedEvents.length} show${scopedEvents.length === 1 ? '' : 's'}`}
-            </>
-          ) : (
-            <>
-              <strong>
-                {markers.length} venue{markers.length === 1 ? '' : 's'}
-              </strong>
-              {' across listed shows'}
-            </>
-          )}
-        </p>
-        {spreadHint && (
-          <p className="map-panel__hint">
-            Pins span the metro — click a show or pin to zoom in.
-          </p>
-        )}
-        {selectedVenueId && venueById[selectedVenueId] && (
-          <p className="map-panel__hint">
-            Focused on {venueById[selectedVenueId].name}
-          </p>
-        )}
-      </div>
       <MapContainer
         className="map-panel__map"
         center={[32.85, -96.9]}
@@ -215,6 +181,7 @@ export function MapView({
           );
         })}
       </MapContainer>
+      <p className="map-panel__note">Venue coordinates are approximate.</p>
     </section>
   );
 }

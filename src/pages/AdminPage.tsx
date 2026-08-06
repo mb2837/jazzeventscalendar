@@ -74,7 +74,7 @@ export default function AdminPage() {
     return (
       <div className="admin admin--login">
         <div className="admin-card">
-          <p className="admin-card__kicker">DFW Jazz Circuit</p>
+          <p className="admin-card__kicker">DFW Jazz Events</p>
           <h1>Admin</h1>
           <p className="admin__muted">
             Sign in to add, edit, and archive shows. Email import is optional.
@@ -107,7 +107,7 @@ export default function AdminPage() {
     <div className="admin">
       <header className="admin-header">
         <div>
-          <p className="admin-card__kicker">DFW Jazz Circuit</p>
+          <p className="admin-card__kicker">DFW Jazz Events</p>
           <h1>Admin</h1>
           <p className="admin__muted">
             {catalog.events.filter((e) => !e.deletedAt).length} active ·{' '}

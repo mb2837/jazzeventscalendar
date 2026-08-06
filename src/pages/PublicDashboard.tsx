@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { addDays, format, parseISO } from 'date-fns';
 import { CalendarView, eventsOnDate } from '../components/CalendarView';
 import { EventCard } from '../components/EventCard';
@@ -12,7 +11,7 @@ type ViewMode = 'calendar' | 'map' | 'ongoing';
 
 export default function PublicDashboard() {
   const { catalog, venueById, loading, error, refresh } = useCatalog();
-  const { editionLabel, ongoing } = catalog;
+  const { ongoing } = catalog;
   const events = useMemo(
     () => catalog.events.filter((e) => !e.deletedAt),
     [catalog.events],
@@ -70,6 +69,14 @@ export default function PublicDashboard() {
     setView('map');
   }
 
+  function openVenueOnMap(venueId: string) {
+    setSelectedVenueId(venueId);
+    setSelectedEventId(null);
+    setMapFocusDay(false);
+    setMapFocusToken((t) => t + 1);
+    setView('map');
+  }
+
   function shiftDay(delta: number) {
     const next = addDays(selectedDate, delta);
     setSelectedDate(next);
@@ -79,27 +86,12 @@ export default function PublicDashboard() {
     if (view === 'map') setMapFocusToken((t) => t + 1);
   }
 
-  const stats = useMemo(() => {
-    const venueIds = new Set(filtered.map((e) => e.venueId));
-    return { shows: filtered.length, venues: venueIds.size };
-  }, [filtered]);
-
   return (
     <div className="app">
       <div className="app__atmosphere" aria-hidden="true" />
 
       <header className="hero">
-        <div className="hero__top">
-          <p className="hero__kicker">{editionLabel}</p>
-          <Link className="hero__admin-link" to="/admin">
-            Admin
-          </Link>
-        </div>
-        <h1 className="hero__brand">DFW Jazz Circuit</h1>
-        <p className="hero__lede">
-          Calendar and venue map for the monthly jazz email — {stats.shows} dated
-          shows across {stats.venues} rooms.
-        </p>
+        <h1 className="hero__brand">DFW Jazz Events</h1>
         {loading && <p className="hero__status">Loading latest catalog…</p>}
         {error && (
           <p className="hero__status hero__status--warn">
@@ -143,7 +135,7 @@ export default function PublicDashboard() {
 
       <main className="stage">
         {view === 'ongoing' ? (
-          <OngoingPanel items={ongoing} />
+          <OngoingPanel items={ongoing} onSelectVenue={openVenueOnMap} />
         ) : (
           <div className={`layout${view === 'map' ? ' layout--map' : ''}`}>
             <div className="layout__primary">
@@ -222,12 +214,9 @@ export default function PublicDashboard() {
                     ›
                   </button>
                 </div>
-                <p>
-                  {listEvents.length} show{listEvents.length === 1 ? '' : 's'}
-                  {selectedVenueId && venueById[selectedVenueId]
-                    ? ` · ${venueById[selectedVenueId].name}`
-                    : ''}
-                </p>
+                {selectedVenueId && venueById[selectedVenueId] && (
+                  <p className="aside-head__venue">{venueById[selectedVenueId].name}</p>
+                )}
                 {selectedVenueId && (
                   <button
                     type="button"
@@ -274,8 +263,10 @@ export default function PublicDashboard() {
 
       <footer className="footer">
         <p>
-          Parsed from the community jazz email. Venue coordinates are approximate.
-          Manage listings in Admin.
+          The operators of this site are not responsible for inaccurate or
+          outdated information. Listings may change without notice. Venue
+          coordinates are approximate. For help, contact{' '}
+          <a href="mailto:fake@fakeemail.com">fake@fakeemail.com</a>.
         </p>
       </footer>
     </div>

@@ -1,4 +1,4 @@
-# DFW Jazz Circuit
+# DFW Jazz Events
 
 Calendar + venue map for the monthly DFW jazz community email, with a password-protected admin UI for imports and edits.
 
@@ -10,15 +10,17 @@ npm run dev
 ```
 
 - Public site: http://localhost:5173/
-- Admin: http://localhost:5173/admin
+- Admin (hidden link): http://localhost:5173/admin?key=jazz
 - API: http://localhost:8787/api/catalog
 
-Default admin password: `jazzadmin`  
-Override with `ADMIN_PASSWORD=...` when starting the server.
+The public site has no Admin link. Open `/admin?key=…` directly.
+
+Default gate key: `jazz` (override with `VITE_ADMIN_GATE_KEY`)  
+Default admin password: `jazzadmin` (override with `ADMIN_PASSWORD`)
 
 ## Admin workflow
 
-1. Open `/admin` and sign in
+1. Open `/admin?key=jazz` (or your configured gate key) and sign in
 2. **Events** — add/edit shows; **Archive** moves them to Trash (restorable)
 3. **Trash** — restore or permanently delete
 4. **Bulk import** (optional) — paste a monthly email, review drafts, import
