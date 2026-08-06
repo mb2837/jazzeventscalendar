@@ -21,6 +21,7 @@ export default function PublicDashboard() {
   const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [mapFocusDay, setMapFocusDay] = useState(true);
+  const [mapFocusToken, setMapFocusToken] = useState(0);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -50,6 +51,15 @@ export default function PublicDashboard() {
     setSelectedEventId(event.id);
     setSelectedVenueId(event.venueId);
     setSelectedDate(parseISO(event.date));
+    if (view === 'map') {
+      setMapFocusToken((t) => t + 1);
+    }
+  }
+
+  function openMapView() {
+    setMapFocusDay(true);
+    setMapFocusToken((t) => t + 1);
+    setView('map');
   }
 
   const stats = useMemo(() => {
@@ -102,7 +112,10 @@ export default function PublicDashboard() {
                 key={id}
                 type="button"
                 className={`tabs__btn${view === id ? ' is-active' : ''}`}
-                onClick={() => setView(id)}
+                onClick={() => {
+                  if (id === 'map') openMapView();
+                  else setView(id);
+                }}
               >
                 {label}
               </button>
@@ -137,7 +150,10 @@ export default function PublicDashboard() {
                       <input
                         type="checkbox"
                         checked={mapFocusDay}
-                        onChange={(e) => setMapFocusDay(e.target.checked)}
+                        onChange={(e) => {
+                          setMapFocusDay(e.target.checked);
+                          setMapFocusToken((t) => t + 1);
+                        }}
                       />
                       Pin venues for selected day only
                     </label>
@@ -147,9 +163,10 @@ export default function PublicDashboard() {
                       onClick={() => {
                         setSelectedVenueId(null);
                         setSelectedEventId(null);
+                        setMapFocusToken((t) => t + 1);
                       }}
                     >
-                      Clear venue filter
+                      Show all day pins
                     </button>
                   </div>
                   <MapView
@@ -158,8 +175,10 @@ export default function PublicDashboard() {
                     onSelectVenue={(venueId) => {
                       setSelectedVenueId(venueId);
                       setSelectedEventId(null);
+                      setMapFocusToken((t) => t + 1);
                     }}
                     focusDate={mapFocusDay ? selectedDate : null}
+                    focusToken={mapFocusToken}
                   />
                 </>
               )}
@@ -167,20 +186,57 @@ export default function PublicDashboard() {
 
             <aside className="layout__aside">
               <div className="aside-head">
+                <nav className="aside-crumb" aria-label="Day filter">
+                  <button
+                    type="button"
+                    className={`aside-crumb__item${selectedVenueId ? '' : ' is-current'}`}
+                    onClick={() => {
+                      setSelectedVenueId(null);
+                      setSelectedEventId(null);
+                      if (view === 'map') setMapFocusToken((t) => t + 1);
+                    }}
+                    disabled={!selectedVenueId}
+                  >
+                    {format(selectedDate, 'EEE, MMM d')}
+                  </button>
+                  {selectedVenueId && venueById[selectedVenueId] && (
+                    <>
+                      <span className="aside-crumb__sep" aria-hidden="true">
+                        /
+                      </span>
+                      <span className="aside-crumb__item is-current">
+                        {venueById[selectedVenueId].name}
+                      </span>
+                    </>
+                  )}
+                </nav>
                 <h2>{format(selectedDate, 'EEEE, MMMM d')}</h2>
                 <p>
                   {listEvents.length} show{listEvents.length === 1 ? '' : 's'}
-                  {selectedVenueId && venueById[selectedVenueId]
-                    ? ` · ${venueById[selectedVenueId].name}`
+                  {selectedVenueId
+                    ? ` at this venue · ${dayEvents.length} on this day`
                     : ''}
                 </p>
+                {selectedVenueId && (
+                  <button
+                    type="button"
+                    className="ghost-btn aside-crumb__clear"
+                    onClick={() => {
+                      setSelectedVenueId(null);
+                      setSelectedEventId(null);
+                      if (view === 'map') setMapFocusToken((t) => t + 1);
+                    }}
+                  >
+                    ← All shows on {format(selectedDate, 'MMM d')}
+                  </button>
+                )}
               </div>
 
               {view === 'calendar' && (
                 <button
                   type="button"
                   className="ghost-btn aside-map-link"
-                  onClick={() => setView('map')}
+                  onClick={openMapView}
                 >
                   See these venues on the map →
                 </button>
