@@ -8,12 +8,15 @@ import { fileURLToPath } from 'node:url';
 import type { JazzEvent, OngoingSeries, Venue } from '../src/types.ts';
 import { draftToEvent, parseJazzEmail } from '../src/lib/parseEmail.ts';
 import {
-  deleteEvent,
+  archiveEvent,
   deleteSeries,
   ensureDb,
   importEvents,
+  purgeEvent,
   readCatalog,
+  readPublicCatalog,
   resetToSeed,
+  restoreEvent,
   updateEditionLabel,
   upsertEvent,
   upsertSeries,
@@ -71,6 +74,10 @@ export function createApp() {
   });
 
   app.get('/api/catalog', (_req, res) => {
+    res.json(readPublicCatalog());
+  });
+
+  app.get('/api/admin/catalog', requireAuth, (_req, res) => {
     res.json(readCatalog());
   });
 
@@ -156,6 +163,7 @@ export function createApp() {
     const event: JazzEvent = {
       ...body,
       id: body.id || `e${Date.now().toString(36)}`,
+      deletedAt: null,
     };
     if (!event.date || !event.artist || !event.venueId) {
       res.status(400).json({ error: 'date, artist, and venueId are required' });
@@ -164,8 +172,17 @@ export function createApp() {
     res.json(upsertEvent(event));
   });
 
+  app.post('/api/admin/events/:id/archive', requireAuth, (req, res) => {
+    res.json(archiveEvent(req.params.id));
+  });
+
+  app.post('/api/admin/events/:id/restore', requireAuth, (req, res) => {
+    res.json(restoreEvent(req.params.id));
+  });
+
   app.delete('/api/admin/events/:id', requireAuth, (req, res) => {
-    res.json(deleteEvent(req.params.id));
+    // Permanent purge (trash only)
+    res.json(purgeEvent(req.params.id));
   });
 
   app.put('/api/admin/venues/:id', requireAuth, (req, res) => {

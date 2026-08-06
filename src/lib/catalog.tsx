@@ -25,6 +25,7 @@ interface CatalogContextValue {
   error: string | null;
   venueById: Record<string, Venue>;
   refresh: () => Promise<void>;
+  refreshAdmin: () => Promise<void>;
   setCatalog: (catalog: Catalog) => void;
 }
 
@@ -47,6 +48,18 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const refreshAdmin = useCallback(async () => {
+    try {
+      const data = await api.getAdminCatalog();
+      setCatalog(data);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load catalog');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     void refresh();
   }, [refresh]);
@@ -57,8 +70,8 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ catalog, loading, error, venueById, refresh, setCatalog }),
-    [catalog, loading, error, venueById, refresh],
+    () => ({ catalog, loading, error, venueById, refresh, refreshAdmin, setCatalog }),
+    [catalog, loading, error, venueById, refresh, refreshAdmin],
   );
 
   return <CatalogContext.Provider value={value}>{children}</CatalogContext.Provider>;

@@ -87,6 +87,53 @@
   font: inherit;
 }
 
+.time-field {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.time-field select {
+  width: auto;
+  min-width: 3.25rem;
+}
+
+.time-field__colon {
+  color: var(--paper-dim);
+  font-weight: 600;
+}
+
+.time-field select:disabled {
+  opacity: 0.45;
+}
+
+.time-field--native {
+  gap: 0.5rem;
+}
+
+.time-field--native input[type='time'] {
+  flex: 1;
+  min-width: 0;
+}
+
+.time-field__clear {
+  appearance: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--paper-dim);
+  padding: 0.45rem 0.65rem;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+}
+
+.time-field__clear:hover {
+  color: var(--brass);
+  border-color: rgba(212, 168, 75, 0.4);
+}
+
 .admin textarea {
   resize: vertical;
   min-height: 8rem;
@@ -128,8 +175,39 @@
   gap: 0.5rem;
 }
 
-.admin-tabs {
-  margin-bottom: 1rem;
+.admin-subtabs {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  margin: 0.85rem 0 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(10, 14, 18, 0.45);
+}
+
+.admin-subtabs__btn {
+  appearance: none;
+  border: 0;
+  border-radius: 2px;
+  padding: 0.45rem 0.85rem;
+  background: transparent;
+  color: var(--paper-dim);
+  cursor: pointer;
+}
+
+.admin-subtabs__btn.is-active {
+  background: linear-gradient(180deg, rgba(212, 168, 75, 0.22), rgba(212, 168, 75, 0.08));
+  color: var(--brass);
+}
+
+.ghost-btn--danger {
+  color: #e39a8c;
+  border-color: rgba(227, 154, 140, 0.35);
+}
+
+.ghost-btn--danger:hover {
+  color: #f0b4a8;
+  border-color: rgba(227, 154, 140, 0.55);
 }
 
 .admin-panel {
@@ -158,6 +236,53 @@
   .admin-grid-2,
   .admin-grid-3 {
     grid-template-columns: 1fr;
+  }
+
+  .admin-header {
+    flex-direction: column;
+  }
+
+  .admin-header__actions {
+    width: 100%;
+  }
+
+  .admin-header__actions .ghost-btn,
+  .admin-header__actions a {
+    flex: 1;
+    text-align: center;
+  }
+
+  .admin-tabs {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .admin-tabs .tabs__btn {
+    text-align: center;
+  }
+
+  .admin-table__row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-table__row .admin-actions {
+    width: 100%;
+  }
+
+  .admin-table__row .admin-actions .ghost-btn,
+  .admin-table__row .admin-actions .admin-btn {
+    flex: 1;
+    text-align: center;
+  }
+
+  .draft-row {
+    grid-template-columns: 1fr;
+  }
+
+  .draft-row__check {
+    order: -1;
   }
 }
 

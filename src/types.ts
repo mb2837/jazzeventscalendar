@@ -20,6 +20,8 @@ export interface JazzEvent {
   notes?: string;
   ticketUrl?: string;
   musicians?: string;
+  /** ISO timestamp when archived; null/undefined = active */
+  deletedAt?: string | null;
 }
 
 export interface OngoingSeries {

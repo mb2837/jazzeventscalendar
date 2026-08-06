@@ -9,6 +9,16 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.resolve(__dirname, '../data');
 const dbPath = path.join(dataDir, 'db.json');
 
+export function isActiveEvent(event: JazzEvent): boolean {
+  return !event.deletedAt;
+}
+
+function sortEvents(list: JazzEvent[]) {
+  list.sort((a, b) =>
+    `${a.date}${a.startTime ?? ''}`.localeCompare(`${b.date}${b.startTime ?? ''}`),
+  );
+}
+
 function seedCatalog(): Catalog {
   return {
     editionLabel,
@@ -34,6 +44,15 @@ export function readCatalog(): Catalog {
   return JSON.parse(raw) as Catalog;
 }
 
+/** Public-facing catalog with archived events removed. */
+export function readPublicCatalog(): Catalog {
+  const catalog = readCatalog();
+  return {
+    ...catalog,
+    events: catalog.events.filter(isActiveEvent),
+  };
+}
+
 function ensureDbExists() {
   if (!fs.existsSync(dbPath)) ensureDb();
 }
@@ -52,16 +71,42 @@ export function updateEditionLabel(label: string): Catalog {
 
 export function upsertEvent(event: JazzEvent): Catalog {
   const catalog = readCatalog();
+  const existing = catalog.events.find((e) => e.id === event.id);
+  const next: JazzEvent = {
+    ...event,
+    // Preserve archive state unless caller sets deletedAt explicitly
+    deletedAt:
+      event.deletedAt === undefined
+        ? (existing?.deletedAt ?? null)
+        : event.deletedAt,
+  };
   const idx = catalog.events.findIndex((e) => e.id === event.id);
-  if (idx >= 0) catalog.events[idx] = event;
-  else catalog.events.push(event);
-  catalog.events.sort((a, b) =>
-    `${a.date}${a.startTime ?? ''}`.localeCompare(`${b.date}${b.startTime ?? ''}`),
-  );
+  if (idx >= 0) catalog.events[idx] = next;
+  else catalog.events.push({ ...next, deletedAt: next.deletedAt ?? null });
+  sortEvents(catalog.events);
   return writeCatalog(catalog);
 }
 
-export function deleteEvent(id: string): Catalog {
+export function archiveEvent(id: string): Catalog {
+  const catalog = readCatalog();
+  const event = catalog.events.find((e) => e.id === id);
+  if (event && !event.deletedAt) {
+    event.deletedAt = new Date().toISOString();
+  }
+  return writeCatalog(catalog);
+}
+
+export function restoreEvent(id: string): Catalog {
+  const catalog = readCatalog();
+  const event = catalog.events.find((e) => e.id === id);
+  if (event) {
+    event.deletedAt = null;
+  }
+  return writeCatalog(catalog);
+}
+
+/** Permanent delete — trash only. */
+export function purgeEvent(id: string): Catalog {
   const catalog = readCatalog();
   catalog.events = catalog.events.filter((e) => e.id !== id);
   return writeCatalog(catalog);
@@ -75,28 +120,37 @@ export function importEvents(
   if (options?.editionLabel) catalog.editionLabel = options.editionLabel;
 
   const replace = new Set(options?.replaceDates ?? []);
+  const now = new Date().toISOString();
   if (replace.size > 0) {
-    catalog.events = catalog.events.filter((e) => !replace.has(e.date));
+    for (const event of catalog.events) {
+      if (replace.has(event.date) && !event.deletedAt) {
+        event.deletedAt = now;
+      }
+    }
   }
 
   const byKey = new Map(
-    catalog.events.map((e) => [`${e.date}|${e.venueId}|${e.artist.toLowerCase()}`, e]),
+    catalog.events
+      .filter(isActiveEvent)
+      .map((e) => [`${e.date}|${e.venueId}|${e.artist.toLowerCase()}`, e]),
   );
 
   for (const event of incoming) {
     const key = `${event.date}|${event.venueId}|${event.artist.toLowerCase()}`;
     const existing = byKey.get(key);
     if (existing) {
-      Object.assign(existing, event, { id: existing.id });
+      Object.assign(existing, event, {
+        id: existing.id,
+        deletedAt: null,
+      });
     } else {
-      catalog.events.push(event);
-      byKey.set(key, event);
+      const created = { ...event, deletedAt: null as string | null };
+      catalog.events.push(created);
+      byKey.set(key, created);
     }
   }
 
-  catalog.events.sort((a, b) =>
-    `${a.date}${a.startTime ?? ''}`.localeCompare(`${b.date}${b.startTime ?? ''}`),
-  );
+  sortEvents(catalog.events);
   return writeCatalog(catalog);
 }
 

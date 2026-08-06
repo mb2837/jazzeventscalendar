@@ -1,34 +1,32 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
-import { api, getToken, setToken } from '../lib/api';
+import { api, setToken } from '../lib/api';
 import { useCatalog } from '../lib/catalog';
 import type { JazzEvent, ParsedEventDraft, Venue } from '../types';
+import { TimeField } from '../components/TimeField';
 import './AdminPage.css';
 
-type AdminTab = 'import' | 'events' | 'venues' | 'series';
+type AdminTab = 'events' | 'import' | 'venues' | 'series';
 
 export default function AdminPage() {
-  const { catalog, setCatalog, refresh } = useCatalog();
+  const { catalog, setCatalog, refreshAdmin } = useCatalog();
   const [authed, setAuthed] = useState(false);
   const [checking, setChecking] = useState(true);
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState<string | null>(null);
-  const [tab, setTab] = useState<AdminTab>('import');
+  const [tab, setTab] = useState<AdminTab>('events');
   const [status, setStatus] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        if (!getToken()) {
-          const session = await api.session();
-          if (!cancelled) setAuthed(session.authenticated);
-        } else {
-          const session = await api.session();
-          if (!cancelled) setAuthed(session.authenticated);
-          if (!session.authenticated) setToken(null);
-        }
+        const session = await api.session();
+        if (cancelled) return;
+        setAuthed(session.authenticated);
+        if (!session.authenticated) setToken(null);
+        else await refreshAdmin();
       } catch {
         if (!cancelled) setAuthed(false);
       } finally {
@@ -38,7 +36,7 @@ export default function AdminPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshAdmin]);
 
   async function handleLogin(e: FormEvent) {
     e.preventDefault();
@@ -48,7 +46,7 @@ export default function AdminPage() {
       setToken(token);
       setAuthed(true);
       setPassword('');
-      await refresh();
+      await refreshAdmin();
     } catch (err) {
       setLoginError(err instanceof Error ? err.message : 'Login failed');
     }
@@ -79,8 +77,8 @@ export default function AdminPage() {
           <p className="admin-card__kicker">DFW Jazz Circuit</p>
           <h1>Admin</h1>
           <p className="admin__muted">
-            Sign in to import email listings and edit the catalog. Default local
-            password: <code>jazzadmin</code>
+            Sign in to add, edit, and archive shows. Email import is optional.
+            Default local password: <code>jazzadmin</code>
           </p>
           <form onSubmit={handleLogin} className="admin-login">
             <label>
@@ -112,8 +110,9 @@ export default function AdminPage() {
           <p className="admin-card__kicker">DFW Jazz Circuit</p>
           <h1>Admin</h1>
           <p className="admin__muted">
-            {catalog.events.length} events · {catalog.venues.length} venues ·{' '}
-            {catalog.ongoing.length} series
+            {catalog.events.filter((e) => !e.deletedAt).length} active ·{' '}
+            {catalog.events.filter((e) => e.deletedAt).length} in trash ·{' '}
+            {catalog.venues.length} venues · {catalog.ongoing.length} series
           </p>
         </div>
         <div className="admin-header__actions">
@@ -129,10 +128,10 @@ export default function AdminPage() {
       <nav className="tabs admin-tabs" aria-label="Admin sections">
         {(
           [
-            ['import', 'Import email'],
             ['events', 'Events'],
             ['venues', 'Venues'],
             ['series', 'On-going'],
+            ['import', 'Bulk import'],
           ] as const
         ).map(([id, label]) => (
           <button
@@ -148,14 +147,6 @@ export default function AdminPage() {
 
       {status && <p className="admin__status">{status}</p>}
 
-      {tab === 'import' && (
-        <ImportPanel
-          onImported={(next, message) => {
-            setCatalog(next);
-            setStatus(message);
-          }}
-        />
-      )}
       {tab === 'events' && (
         <EventsPanel
           onChange={(next, message) => {
@@ -175,6 +166,14 @@ export default function AdminPage() {
       {tab === 'series' && (
         <SeriesPanel
           onChange={(next, message) => {
+            setCatalog(next);
+            setStatus(message);
+          }}
+        />
+      )}
+      {tab === 'import' && (
+        <ImportPanel
+          onImported={(next, message) => {
             setCatalog(next);
             setStatus(message);
           }}
@@ -246,10 +245,10 @@ function ImportPanel({
 
   return (
     <section className="admin-panel">
-      <h2>Paste monthly email</h2>
+      <h2>Bulk import from email</h2>
       <p className="admin__muted">
-        Parse into draft rows, fix venue/date mismatches, then publish. Nothing
-        goes live until you import selected drafts.
+        Optional. Prefer adding and editing shows under Events. Paste a monthly
+        email here when you want a bulk assist — review drafts before publishing.
       </p>
 
       <div className="admin-grid-2">
@@ -327,8 +326,8 @@ function ImportPanel({
               checked={replaceDates}
               onChange={(e) => setReplaceDates(e.target.checked)}
             />
-            Replace existing events on selected dates ({dates.length} date
-            {dates.length === 1 ? '' : 's'})
+            Archive existing events on selected dates ({dates.length} date
+            {dates.length === 1 ? '' : 's'}) before import
           </label>
 
           <div className="draft-list">
@@ -411,18 +410,16 @@ function DraftRow({
         <div className="admin-grid-3">
           <label>
             Start
-            <input
-              value={draft.startTime ?? ''}
-              onChange={(e) => onChange({ startTime: e.target.value || undefined })}
-              placeholder="19:30"
+            <TimeField
+              value={draft.startTime}
+              onChange={(startTime) => onChange({ startTime })}
             />
           </label>
           <label>
             End
-            <input
-              value={draft.endTime ?? ''}
-              onChange={(e) => onChange({ endTime: e.target.value || undefined })}
-              placeholder="22:00"
+            <TimeField
+              value={draft.endTime}
+              onChange={(endTime) => onChange({ endTime })}
             />
           </label>
           <label>
@@ -456,14 +453,19 @@ function EventsPanel({
 }) {
   const { catalog } = useCatalog();
   const [filter, setFilter] = useState('');
+  const [listMode, setListMode] = useState<'active' | 'trash'>('active');
   const [editing, setEditing] = useState<JazzEvent | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const trashCount = catalog.events.filter((e) => e.deletedAt).length;
+
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase();
-    const list = [...catalog.events].sort((a, b) =>
-      `${a.date}${a.startTime ?? ''}`.localeCompare(`${b.date}${b.startTime ?? ''}`),
-    );
+    const list = catalog.events
+      .filter((e) => (listMode === 'trash' ? Boolean(e.deletedAt) : !e.deletedAt))
+      .sort((a, b) =>
+        `${a.date}${a.startTime ?? ''}`.localeCompare(`${b.date}${b.startTime ?? ''}`),
+      );
     if (!q) return list;
     return list.filter(
       (e) =>
@@ -471,15 +473,19 @@ function EventsPanel({
         e.date.includes(q) ||
         catalog.venues.find((v) => v.id === e.venueId)?.name.toLowerCase().includes(q),
     );
-  }, [catalog, filter]);
+  }, [catalog, filter, listMode]);
 
   async function save() {
     if (!editing) return;
     setError(null);
     try {
+      const payload = {
+        ...editing,
+        deletedAt: listMode === 'trash' ? editing.deletedAt ?? null : null,
+      };
       const next = editing.id.startsWith('new-')
-        ? await api.createEvent({ ...editing, id: `e${Date.now().toString(36)}` })
-        : await api.saveEvent(editing);
+        ? await api.createEvent({ ...payload, id: `e${Date.now().toString(36)}` })
+        : await api.saveEvent(payload);
       onChange(next, 'Event saved.');
       setEditing(null);
     } catch (err) {
@@ -487,32 +493,77 @@ function EventsPanel({
     }
   }
 
-  async function remove(id: string) {
-    if (!confirm('Delete this event?')) return;
-    const next = await api.deleteEvent(id);
-    onChange(next, 'Event deleted.');
+  async function archive(id: string) {
+    if (!confirm('Move this event to trash? You can restore it later.')) return;
+    const next = await api.archiveEvent(id);
+    onChange(next, 'Event moved to trash.');
+    if (editing?.id === id) setEditing(null);
+  }
+
+  async function restore(id: string) {
+    const next = await api.restoreEvent(id);
+    onChange(next, 'Event restored.');
+  }
+
+  async function purge(id: string) {
+    if (!confirm('Permanently delete this event? This cannot be undone.')) return;
+    const next = await api.purgeEvent(id);
+    onChange(next, 'Event permanently deleted.');
+    if (editing?.id === id) setEditing(null);
   }
 
   return (
     <section className="admin-panel">
       <div className="admin-import-meta">
-        <h2>Events</h2>
+        <div>
+          <h2>Events</h2>
+          <p className="admin__muted" style={{ margin: '0.35rem 0 0' }}>
+            Add and edit shows manually. Archive sends them to trash — not gone.
+          </p>
+        </div>
+        {listMode === 'active' && (
+          <button
+            type="button"
+            className="admin-btn"
+            onClick={() =>
+              setEditing({
+                id: `new-${Date.now()}`,
+                date: format(new Date(), 'yyyy-MM-dd'),
+                artist: '',
+                venueId: catalog.venues[0]?.id ?? '',
+                startTime: '19:30',
+                deletedAt: null,
+              })
+            }
+          >
+            Add event
+          </button>
+        )}
+      </div>
+
+      <div className="admin-subtabs" role="tablist" aria-label="Event lists">
         <button
           type="button"
-          className="admin-btn"
-          onClick={() =>
-            setEditing({
-              id: `new-${Date.now()}`,
-              date: format(new Date(), 'yyyy-MM-dd'),
-              artist: '',
-              venueId: catalog.venues[0]?.id ?? '',
-              startTime: '19:30',
-            })
-          }
+          className={`admin-subtabs__btn${listMode === 'active' ? ' is-active' : ''}`}
+          onClick={() => {
+            setListMode('active');
+            setEditing(null);
+          }}
         >
-          Add event
+          Active
+        </button>
+        <button
+          type="button"
+          className={`admin-subtabs__btn${listMode === 'trash' ? ' is-active' : ''}`}
+          onClick={() => {
+            setListMode('trash');
+            setEditing(null);
+          }}
+        >
+          Trash{trashCount > 0 ? ` (${trashCount})` : ''}
         </button>
       </div>
+
       <input
         className="admin-filter"
         placeholder="Filter events…"
@@ -520,7 +571,7 @@ function EventsPanel({
         onChange={(e) => setFilter(e.target.value)}
       />
       {error && <p className="admin__error">{error}</p>}
-      {editing && (
+      {editing && listMode === 'active' && (
         <EventEditor
           event={editing}
           venues={catalog.venues}
@@ -530,33 +581,67 @@ function EventsPanel({
         />
       )}
       <div className="admin-table">
-        {filtered.map((event) => {
-          const venue = catalog.venues.find((v) => v.id === event.venueId);
-          return (
-            <div key={event.id} className="admin-table__row">
-              <div>
-                <strong>{event.artist}</strong>
-                <p className="admin__muted">
-                  {format(parseISO(event.date), 'EEE MMM d')}
-                  {event.startTime ? ` · ${event.startTime}` : ''}
-                  {venue ? ` · ${venue.name}` : ''}
-                </p>
+        {filtered.length === 0 ? (
+          <p className="admin__muted">
+            {listMode === 'trash' ? 'Trash is empty.' : 'No active events match.'}
+          </p>
+        ) : (
+          filtered.map((event) => {
+            const venue = catalog.venues.find((v) => v.id === event.venueId);
+            return (
+              <div key={event.id} className="admin-table__row">
+                <div>
+                  <strong>{event.artist}</strong>
+                  <p className="admin__muted">
+                    {format(parseISO(event.date), 'EEE MMM d')}
+                    {event.startTime ? ` · ${event.startTime}` : ''}
+                    {venue ? ` · ${venue.name}` : ''}
+                    {event.deletedAt
+                      ? ` · archived ${format(parseISO(event.deletedAt), 'MMM d, yyyy')}`
+                      : ''}
+                  </p>
+                </div>
+                <div className="admin-actions">
+                  {listMode === 'active' ? (
+                    <>
+                      <button
+                        type="button"
+                        className="ghost-btn"
+                        onClick={() => setEditing(event)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="ghost-btn"
+                        onClick={() => void archive(event.id)}
+                      >
+                        Archive
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        className="ghost-btn"
+                        onClick={() => void restore(event.id)}
+                      >
+                        Restore
+                      </button>
+                      <button
+                        type="button"
+                        className="ghost-btn ghost-btn--danger"
+                        onClick={() => void purge(event.id)}
+                      >
+                        Delete forever
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
-              <div className="admin-actions">
-                <button type="button" className="ghost-btn" onClick={() => setEditing(event)}>
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  className="ghost-btn"
-                  onClick={() => void remove(event.id)}
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
     </section>
   );
@@ -610,18 +695,17 @@ function EventEditor({
       <div className="admin-grid-3">
         <label>
           Start
-          <input
-            value={event.startTime ?? ''}
-            onChange={(e) =>
-              onChange({ ...event, startTime: e.target.value || undefined })
-            }
+          <TimeField
+            value={event.startTime}
+            onChange={(startTime) => onChange({ ...event, startTime })}
+            allowEmpty={false}
           />
         </label>
         <label>
           End
-          <input
-            value={event.endTime ?? ''}
-            onChange={(e) => onChange({ ...event, endTime: e.target.value || undefined })}
+          <TimeField
+            value={event.endTime}
+            onChange={(endTime) => onChange({ ...event, endTime })}
           />
         </label>
         <label>

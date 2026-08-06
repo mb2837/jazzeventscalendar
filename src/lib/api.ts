@@ -67,10 +67,20 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(event),
     }),
-  deleteEvent: (id: string) =>
+  archiveEvent: (id: string) =>
+    request<import('../types').Catalog>(`/api/admin/events/${id}/archive`, {
+      method: 'POST',
+    }),
+  restoreEvent: (id: string) =>
+    request<import('../types').Catalog>(`/api/admin/events/${id}/restore`, {
+      method: 'POST',
+    }),
+  purgeEvent: (id: string) =>
     request<import('../types').Catalog>(`/api/admin/events/${id}`, {
       method: 'DELETE',
     }),
+  getAdminCatalog: () =>
+    request<import('../types').Catalog>('/api/admin/catalog'),
   saveVenue: (venue: import('../types').Venue) =>
     request<import('../types').Catalog>(`/api/admin/venues/${venue.id}`, {
       method: 'PUT',

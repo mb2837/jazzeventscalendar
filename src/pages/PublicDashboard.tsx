@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { CalendarView, eventsOnDate } from '../components/CalendarView';
@@ -11,8 +11,16 @@ import type { JazzEvent } from '../types';
 type ViewMode = 'calendar' | 'map' | 'ongoing';
 
 export default function PublicDashboard() {
-  const { catalog, venueById, loading, error } = useCatalog();
-  const { editionLabel, events, ongoing } = catalog;
+  const { catalog, venueById, loading, error, refresh } = useCatalog();
+  const { editionLabel, ongoing } = catalog;
+  const events = useMemo(
+    () => catalog.events.filter((e) => !e.deletedAt),
+    [catalog.events],
+  );
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
   const [view, setView] = useState<ViewMode>('calendar');
   const [month, setMonth] = useState(() => new Date(2026, 7, 1));

@@ -19,11 +19,12 @@ Override with `ADMIN_PASSWORD=...` when starting the server.
 ## Admin workflow
 
 1. Open `/admin` and sign in
-2. **Import email** — paste the monthly email, parse, review/fix drafts, import selected rows
-3. Optionally replace existing events on the imported dates
-4. Use **Events** / **Venues** for one-off edits
+2. **Events** — add/edit shows; **Archive** moves them to Trash (restorable)
+3. **Trash** — restore or permanently delete
+4. **Bulk import** (optional) — paste a monthly email, review drafts, import
+5. Use **Venues** / **On-going** for rooms and recurring series
 
-Live data is stored in `data/db.json` (created on first API start from the built-in seed). That file is gitignored.
+Live data is stored in `data/db.json` (created on first API start from the built-in seed). That file is gitignored. Archived events stay in the file until purged.
 
 ## Production-style run
 
