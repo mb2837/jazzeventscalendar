@@ -2,8 +2,8 @@ import { useEffect, useMemo } from 'react';
 import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import type { JazzEvent } from '../types';
-import { venues, venueById } from '../data/venues';
+import type { JazzEvent, Venue } from '../types';
+import { useCatalog } from '../lib/catalog';
 import { format, parseISO } from 'date-fns';
 
 const pinIcon = L.divIcon({
@@ -29,7 +29,13 @@ interface MapViewProps {
   focusDate?: Date | null;
 }
 
-function FitBounds({ venueIds }: { venueIds: string[] }) {
+function FitBounds({
+  venueIds,
+  venueById,
+}: {
+  venueIds: string[];
+  venueById: Record<string, Venue>;
+}) {
   const map = useMap();
   useEffect(() => {
     const points = venueIds
@@ -45,11 +51,13 @@ function FitBounds({ venueIds }: { venueIds: string[] }) {
       return;
     }
     map.fitBounds(L.latLngBounds(points), { padding: [48, 48], maxZoom: 12 });
-  }, [map, venueIds]);
+  }, [map, venueIds, venueById]);
   return null;
 }
 
 export function MapView({ events, selectedVenueId, onSelectVenue, focusDate }: MapViewProps) {
+  const { catalog, venueById } = useCatalog();
+
   const scopedEvents = useMemo(() => {
     if (!focusDate) return events;
     const key = format(focusDate, 'yyyy-MM-dd');
@@ -67,7 +75,7 @@ export function MapView({ events, selectedVenueId, onSelectVenue, focusDate }: M
   }, [scopedEvents]);
 
   const activeVenueIds = [...venueCounts.keys()];
-  const markers = venues.filter((v) => venueCounts.has(v.id));
+  const markers = catalog.venues.filter((v) => venueCounts.has(v.id));
 
   return (
     <section className="map-panel" aria-label="Venue map">
@@ -88,7 +96,7 @@ export function MapView({ events, selectedVenueId, onSelectVenue, focusDate }: M
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
         />
-        <FitBounds venueIds={activeVenueIds} />
+        <FitBounds venueIds={activeVenueIds} venueById={venueById} />
         {markers.map((venue) => {
           const shows = venueCounts.get(venue.id) ?? [];
           const active = selectedVenueId === venue.id;

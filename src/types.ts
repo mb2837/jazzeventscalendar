@@ -31,3 +31,27 @@ export interface OngoingSeries {
   notes?: string;
   url?: string;
 }
+
+export interface Catalog {
+  editionLabel: string;
+  venues: Venue[];
+  events: JazzEvent[];
+  ongoing: OngoingSeries[];
+}
+
+export interface ParsedEventDraft {
+  id: string;
+  date?: string;
+  startTime?: string;
+  endTime?: string;
+  artist: string;
+  venueId?: string;
+  venueGuess?: string;
+  cover?: string;
+  notes?: string;
+  ticketUrl?: string;
+  musicians?: string;
+  raw: string;
+  warnings: string[];
+  selected: boolean;
+}

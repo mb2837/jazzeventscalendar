@@ -1,23 +1,41 @@
 # DFW Jazz Circuit
 
-A small dashboard that turns the monthly DFW jazz community email into a **calendar** and **venue map**.
+Calendar + venue map for the monthly DFW jazz community email, with a password-protected admin UI for imports and edits.
 
-## Run
+## Run locally
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open the local URL Vite prints (usually `http://localhost:5173`).
+- Public site: http://localhost:5173/
+- Admin: http://localhost:5173/admin
+- API: http://localhost:8787/api/catalog
 
-## What’s included
+Default admin password: `jazzadmin`  
+Override with `ADMIN_PASSWORD=...` when starting the server.
 
-- Parsed dated shows from **Aug. 2026 jazz events # 3** (into early October)
-- Month calendar with event counts
-- Day detail list (time, artist, venue, cover, tickets)
-- Map view with venue pins (Leaflet / Carto dark tiles)
-- Search across artists and venues
-- Ongoing weekly/monthly series panel
+## Admin workflow
 
-Venue coordinates are approximate. A few source typos were normalized (e.g. July 13 lines in the August edition → Aug 13).
+1. Open `/admin` and sign in
+2. **Import email** — paste the monthly email, parse, review/fix drafts, import selected rows
+3. Optionally replace existing events on the imported dates
+4. Use **Events** / **Venues** for one-off edits
+
+Live data is stored in `data/db.json` (created on first API start from the built-in seed). That file is gitignored.
+
+## Production-style run
+
+```bash
+npm run build
+npm start
+```
+
+Serves the built UI and API from port `8787` (or `PORT`).
+
+## Stack
+
+- Vite + React (public calendar/map)
+- Express API (`server/`) with cookie/bearer auth
+- Heuristic email parser (`src/lib/parseEmail.ts`)

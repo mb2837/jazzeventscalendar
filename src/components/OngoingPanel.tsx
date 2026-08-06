@@ -1,11 +1,12 @@
 import type { OngoingSeries } from '../types';
-import { venueById } from '../data/venues';
+import { useCatalog } from '../lib/catalog';
 
 interface OngoingPanelProps {
   items: OngoingSeries[];
 }
 
 export function OngoingPanel({ items }: OngoingPanelProps) {
+  const { venueById } = useCatalog();
   return (
     <section className="ongoing" aria-label="Ongoing series">
       <h2 className="ongoing__title">On-going</h2>

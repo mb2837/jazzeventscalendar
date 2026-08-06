@@ -1,6 +1,6 @@
 import { format, parseISO } from 'date-fns';
 import type { JazzEvent } from '../types';
-import { venueById } from '../data/venues';
+import { useCatalog } from '../lib/catalog';
 
 function formatTime(t?: string): string {
   if (!t) return '';
@@ -26,6 +26,7 @@ interface EventCardProps {
 }
 
 export function EventCard({ event, selected, onSelect, showDate }: EventCardProps) {
+  const { venueById } = useCatalog();
   const venue = venueById[event.venueId];
 
   return (
