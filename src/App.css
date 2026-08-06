@@ -310,10 +310,40 @@
 }
 
 .aside-head h2 {
-  margin: 0.35rem 0 0;
+  margin: 0;
   font-family: var(--font-display);
-  font-size: 1.35rem;
+  font-size: 1.2rem;
   letter-spacing: -0.02em;
+  text-align: center;
+  flex: 1;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.aside-head__title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.aside-day-nav {
+  flex: 0 0 auto;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--ink-3);
+  color: var(--paper);
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.aside-day-nav:hover {
+  border-color: var(--brass);
+  color: var(--brass);
 }
 
 .aside-head p {

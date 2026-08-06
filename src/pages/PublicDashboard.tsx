@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { format, parseISO } from 'date-fns';
+import { addDays, format, parseISO } from 'date-fns';
 import { CalendarView, eventsOnDate } from '../components/CalendarView';
 import { EventCard } from '../components/EventCard';
 import { MapView } from '../components/MapView';
@@ -68,6 +68,15 @@ export default function PublicDashboard() {
     setMapFocusDay(true);
     setMapFocusToken((t) => t + 1);
     setView('map');
+  }
+
+  function shiftDay(delta: number) {
+    const next = addDays(selectedDate, delta);
+    setSelectedDate(next);
+    setSelectedEventId(null);
+    setSelectedVenueId(null);
+    setMonth(new Date(next.getFullYear(), next.getMonth(), 1));
+    if (view === 'map') setMapFocusToken((t) => t + 1);
   }
 
   const stats = useMemo(() => {
@@ -218,7 +227,25 @@ export default function PublicDashboard() {
                     </>
                   )}
                 </nav>
-                <h2>{format(selectedDate, 'EEEE, MMMM d')}</h2>
+                <div className="aside-head__title-row">
+                  <button
+                    type="button"
+                    className="aside-day-nav"
+                    onClick={() => shiftDay(-1)}
+                    aria-label={`Previous day, ${format(addDays(selectedDate, -1), 'EEEE, MMMM d')}`}
+                  >
+                    ‹
+                  </button>
+                  <h2>{format(selectedDate, 'EEEE, MMMM d')}</h2>
+                  <button
+                    type="button"
+                    className="aside-day-nav"
+                    onClick={() => shiftDay(1)}
+                    aria-label={`Next day, ${format(addDays(selectedDate, 1), 'EEEE, MMMM d')}`}
+                  >
+                    ›
+                  </button>
+                </div>
                 <p>
                   {listEvents.length} show{listEvents.length === 1 ? '' : 's'}
                   {selectedVenueId
