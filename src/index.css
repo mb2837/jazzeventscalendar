@@ -1,0 +1,61 @@
+:root {
+  --ink: #0a0e12;
+  --ink-2: #121820;
+  --ink-3: #1a2330;
+  --smoke: #8a93a0;
+  --paper: #e8e2d6;
+  --paper-dim: #b8b0a2;
+  --brass: #d4a84b;
+  --brass-deep: #a67c2e;
+  --teal: #2f6f6a;
+  --teal-glow: rgba(47, 111, 106, 0.35);
+  --line: rgba(232, 226, 214, 0.12);
+  --danger-soft: #c45c4a;
+  --radius: 4px;
+  --font-display: 'Syne', sans-serif;
+  --font-body: 'Figtree', sans-serif;
+  color: var(--paper);
+  background: var(--ink);
+  font-family: var(--font-body);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  min-width: 320px;
+  background: var(--ink);
+}
+
+a {
+  color: var(--brass);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
