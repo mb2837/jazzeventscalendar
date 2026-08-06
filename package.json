@@ -21,7 +21,8 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-leaflet": "^5.0.0",
-    "react-router-dom": "^7.18.2"
+    "react-router-dom": "^7.18.2",
+    "tsx": "^4.23.9"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",
@@ -34,7 +35,6 @@
     "@vitejs/plugin-react": "^6.0.4",
     "concurrently": "^10.0.4",
     "oxlint": "^1.75.0",
-    "tsx": "^4.23.9",
     "typescript": "~6.0.2",
     "vite": "^8.2.0"
   }
