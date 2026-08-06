@@ -28,6 +28,8 @@ Default admin password: `jazzadmin` (override with `ADMIN_PASSWORD`)
 
 Live data is stored in `data/db.json` (created on first API start from the built-in seed). That file is gitignored. Archived events stay in the file until purged.
 
+Site copy settings (help email, etc.) live in `site.config.json` at the repo root. Change `helpEmail` there and rebuild.
+
 ## Production-style run
 
 ```bash

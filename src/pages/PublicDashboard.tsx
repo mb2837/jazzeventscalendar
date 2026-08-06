@@ -5,6 +5,7 @@ import { EventCard } from '../components/EventCard';
 import { MapView } from '../components/MapView';
 import { OngoingPanel } from '../components/OngoingPanel';
 import { useCatalog } from '../lib/catalog';
+import { siteConfig } from '../lib/siteConfig';
 import type { JazzEvent } from '../types';
 
 type ViewMode = 'calendar' | 'map' | 'ongoing';
@@ -265,8 +266,8 @@ export default function PublicDashboard() {
         <p>
           The operators of this site are not responsible for inaccurate or
           outdated information. Listings may change without notice. Venue
-          coordinates are approximate. For help, contact{' '}
-          <a href="mailto:fake@fakeemail.com">fake@fakeemail.com</a>.
+          coordinates are approximate. For help,           contact{' '}
+          <a href={`mailto:${siteConfig.helpEmail}`}>{siteConfig.helpEmail}</a>.
         </p>
       </footer>
     </div>
